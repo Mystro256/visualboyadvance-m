@@ -1,0 +1,121 @@
+#!/bin/sh
+
+main() {
+    mktmp
+
+    cd "$(dirname $0)"
+
+    case "$(uname -s)" in
+        Darwin)
+            osx_installdeps
+            ;;
+        MINGW*|MSYS*)
+            msys2_installdeps
+            ;;
+        *)
+            echo "Don't know how to install deps on your OS." >&2
+            quit 1
+            ;;
+    esac
+
+    quit 0
+}
+
+mktmp() {
+    tmp="/tmp/vbam_installdeps_$$"
+    mkdir "$tmp" || quit 1
+    chmod 755 "$tmp" 2>/dev/null
+    trap "quit 1" PIPE HUP INT QUIT ILL TRAP KILL BUS TERM
+}
+
+quit() {
+    [ -n "$tmp" ] && rm -rf "$tmp" 2>/dev/null
+    exit ${1:-0}
+}
+
+msys2_installdeps() {
+    MINGW_DEPS='SDL2 cairo ffmpeg openal sfml wxWidgets zlib binutils cmake crt-git extra-cmake-modules gcc gcc-libs gdb headers-git make pkg-config tools-git windows-default-manifest libmangle-git nasm'
+    MINGW64_DEPS=
+    MINGW32_DEPS=
+
+    for dep in $MINGW_DEPS; do
+        MINGW64_DEPS="$MINGW64_DEPS mingw-w64-x86_64-$dep"
+        MINGW32_DEPS="$MINGW32_DEPS mingw-w64-i686-$dep"
+    done
+
+    echo '[32mInstalling deps....[0m'
+    echo
+
+    pacman --noconfirm --needed -Syuu git make zip $MINGW64_DEPS $MINGW32_DEPS || quit 1
+
+    git submodule update --init --recursive
+
+    cat <<'EOF'
+
+[32mDone! To build do:[0m
+
+mkdir build
+cd build
+cmake .. -G 'MSYS Makefiles'
+make -j10
+EOF
+}
+
+osx_installdeps() {
+    if ! xcode-select -p >/dev/null 2>&1 && \
+       ! pkgutil --pkg-info=com.apple.pkg.CLTools_Executables >/dev/null 2>&1 && \
+       ! pkgutil --pkg-info=com.apple.pkg.DeveloperToolsCLI >/dev/null 2>&1; then
+
+        echo 'Please install XCode and the XCode Command Line Tools, then run this script again.' >&2
+        echo 'On newer systems this can be done with: xcode-select --install' >&2
+        quit 1
+    fi
+
+    if command -v brew >/dev/null; then
+        brew_installdeps
+    elif command -v port >/dev/null; then
+        macports_installdeps
+    elif command -v apt-get >/dev/null; then
+        fink_installdpes
+    else
+        echo 'You have no package manager, please install homebrew, macports or fink.' >&2
+        echo 'Homebrew is recommended.' >&2
+    fi
+}
+
+brew_installdeps() {
+    echo '[32mInstalling deps....[0m'
+    echo
+
+    brew -v update
+    brew -v install cairo cmake ffmpeg gettext jpeg libpng libtiff pkg-config sdl2 sfml wxmac || quit 1
+
+    brew -v cleanup
+
+    generic_build_instructions
+}
+
+macports_installdeps() {
+    echo '[32mInstalling deps....[0m'
+    echo
+
+    sudo port -v selfupdate
+    sudo port -v install cairo cmake ffmpeg gettext jpeg libpng tiff pkgconfig libsdl2 sfml wxWidgets-3.0 libiconv coreutils || quit 1
+    sudo port select wxWidgets wxWidgets-3.0
+
+    generic_build_instructions
+}
+
+generic_build_instructions() {
+    cat <<'EOF'
+
+[32mDone! To build do:[0m
+
+mkdir build
+cd build
+cmake ..
+make -j10
+EOF
+}
+
+main "$@"

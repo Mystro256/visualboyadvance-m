@@ -61,17 +61,32 @@ if(SFML_STATIC_LIBRARIES)
 endif()
 
 # define the list of search paths for headers and libraries
-set(FIND_SFML_PATHS
+set(FIND_SFML_PATHS ${FIND_SFML_PATHS}
     ${SFML_ROOT}
     $ENV{SFML_ROOT}
     ~/Library/Frameworks
     /Library/Frameworks
-    /usr/local
+)
+
+# only search package manger paths if they are in the user's PATH
+
+if($ENV{PATH} MATCHES "(^|:)/usr/local/bin/?(:|$)")
+    set(FIND_SFML_PATHS ${FIND_SFML_PATHS} /usr/local) # Mac Homebrew and local installs
+endif()
+if($ENV{PATH} MATCHES "(^|:)/opt/local/bin/?(:|$)")
+    set(FIND_SFML_PATHS ${FIND_SFML_PATHS} /opt/local) # MacPorts
+endif()
+if($ENV{PATH} MATCHES "(^|:)/sw/bin/?(:|$)")
+    set(FIND_SFML_PATHS ${FIND_SFML_PATHS} /sw) # Fink
+endif()
+if($ENV{PATH} MATCHES "(^|:)/opt/csw/bin/?(:|$)")
+    set(FIND_SFML_PATHS ${FIND_SFML_PATHS} /opt/csw) # OpenCSW (Solaris)
+endif()
+
+set(FIND_SFML_PATHS ${FIND_SFML_PATHS}
     /usr
-    /sw
-    /opt/local
-    /opt/csw
-    /opt)
+    /opt
+)
 
 # find the SFML include directory
 find_path(SFML_INCLUDE_DIR SFML/Config.hpp

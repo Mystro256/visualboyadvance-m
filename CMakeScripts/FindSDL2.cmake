@@ -82,21 +82,35 @@
 
 message("<FindSDL2.cmake>")
 
-SET(SDL2_SEARCH_PATHS
+SET(SDL2_SEARCH_PATHS ${SDL2_SEARCH_PATHS}
 	~/Library/Frameworks
 	/Library/Frameworks
-	/usr/local
+)
+
+# only search package manger paths if they are in the user's PATH
+
+IF($ENV{PATH} MATCHES "(^|:)/usr/local/bin/?(:|$)")
+    SET(SDL2_SEARCH_PATHS ${SDL2_SEARCH_PATHS} /usr/local) # Mac Homebrew and local installs
+ENDIF()
+IF($ENV{PATH} MATCHES "(^|:)/opt/local/bin/?(:|$)")
+    SET(SDL2_SEARCH_PATHS ${SDL2_SEARCH_PATHS} /opt/local) # MacPorts
+ENDIF()
+IF($ENV{PATH} MATCHES "(^|:)/sw/bin/?(:|$)")
+    SET(SDL2_SEARCH_PATHS ${SDL2_SEARCH_PATHS} /sw) # Fink
+ENDIF()
+IF($ENV{PATH} MATCHES "(^|:)/opt/csw/bin/?(:|$)")
+    SET(SDL2_SEARCH_PATHS ${SDL2_SEARCH_PATHS} /opt/csw) # OpenCSW (Solaris)
+ENDIF()
+
+SET(SDL2_SEARCH_PATHS ${SDL2_SEARCH_PATHS}
 	/usr
-	/sw # Fink
-	/opt/local # DarwinPorts
-	/opt/csw # Blastwave
 	/opt
 	${SDL2_PATH}
 )
 
+
 FIND_PATH(SDL2_INCLUDE_DIR SDL.h
-	HINTS
-	$ENV{SDL2DIR}
+	HINTS $ENV{SDL2DIR}
 	PATH_SUFFIXES include/SDL2 include
 	PATHS ${SDL2_SEARCH_PATHS}
 )
