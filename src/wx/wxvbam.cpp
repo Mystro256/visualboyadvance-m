@@ -259,6 +259,10 @@ bool wxvbamApp::OnInit()
         gopts.render_method = RND_SIMPLE;
     }
 
+    if (throttle == 0) {
+        throttle = 100;
+    }
+
     // process command-line options
     for (int i = 0; i < pending_optset.size(); i++) {
         wxString p = pending_optset[i];
