@@ -28,7 +28,7 @@ const float SoundSDL::_delay = 0.032f;
 SoundSDL::SoundSDL():
 	_rbuf(0),
 	_dev(-1),
-	current_rate(0),
+	current_rate(100),
 	_initialized(false)
 {
 
@@ -48,7 +48,7 @@ void SoundSDL::read(uint16_t * stream, int length)
 	/* since this is running in a different thread, speedup and
 	 * throttle can change at any time; save the value so locks
 	 * stay in sync */
-	bool lock = (emulating && !speedup && throttle && !gba_joybus_active) ? true : false;
+	bool lock = (emulating && !speedup && !gba_joybus_active) ? true : false;
 
 	if (lock)
 		SDL_SemWait (_semBufferFull);
@@ -77,7 +77,7 @@ void SoundSDL::write(uint16_t * finalWave, int length)
 	std::size_t avail;
 	while ((avail = _rbuf.avail() / 2) < samples)
 	{
-		bool lock = (emulating && !speedup && throttle && !gba_joybus_active) ? true : false;
+		bool lock = (emulating && !speedup && !gba_joybus_active) ? true : false;
 
 		_rbuf.write(finalWave, avail * 2);
 
